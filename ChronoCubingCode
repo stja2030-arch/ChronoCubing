@@ -1,0 +1,884 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChronoCubing</title>
+
+<script type="module" src="https://cdn.cubing.net/v0/js/cubing/twisty"></script>
+
+<style>
+:root {
+  --bg:#090d14;--panel:#111824;--panel2:#182333;
+  --border:#29364a;--text:#edf3fc;--muted:#8493a9;
+  --accent:#60a5fa;--green:#4ade80;--red:#f87171;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 14px;transition:.15s}
+button:hover{border-color:var(--accent)}
+button.active{background:var(--accent);color:#07111f}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:11px;width:100%}
+textarea{resize:vertical}
+header{height:70px;display:flex;align-items:center;justify-content:space-between;padding:0 5%;border-bottom:1px solid var(--border);position:sticky;top:0;background:#090d14ed;backdrop-filter:blur(12px);z-index:5}
+.brand{display:flex;align-items:center;gap:12px;font-size:19px;font-weight:800}
+.brand small{display:block;font-size:9px;letter-spacing:2px;color:var(--accent)}
+.logo{width:40px;height:40px}
+nav{display:flex;gap:5px;padding:12px 5%;border-bottom:1px solid var(--border);overflow-x:auto}
+nav button{background:transparent;border:0;color:var(--muted);white-space:nowrap}
+nav button.active{background:var(--panel2);color:var(--text)}
+main{max-width:1350px;margin:auto;padding:28px 5% 65px}
+.page{display:none}.page.active{display:block}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:19px}
+.muted{color:var(--muted)}.small{font-size:12px}
+.title{font-size:22px;font-weight:750;margin:0 0 6px}
+.section-title{font-size:14px;font-weight:700;margin:0 0 15px}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.scramble-box{text-align:center;margin:30px auto;max-width:900px}
+.scramble{font-size:clamp(17px,2.5vw,26px);line-height:1.8;overflow-wrap:anywhere;min-height:85px}
+.timer-area{min-height:290px;display:flex;align-items:center;justify-content:center;flex-direction:column;user-select:none;touch-action:manipulation;cursor:pointer}
+.timer{font-size:clamp(75px,14vw,145px);font-weight:300;letter-spacing:-6px;font-variant-numeric:tabular-nums}
+.timer.ready{color:var(--green)}.timer-label{color:var(--muted);font-size:12px;letter-spacing:2px;margin-top:20px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+.stat{background:var(--panel);border:1px solid var(--border);padding:16px;border-radius:12px}
+.stat .value{font-size:25px;font-weight:650;margin-top:8px;font-variant-numeric:tabular-nums}
+.stat .label{font-size:11px;color:var(--muted)}
+.dashboard{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{text-align:left;padding:12px 9px;border-bottom:1px solid var(--border)}
+th{font-size:11px;color:var(--muted)}
+.time{font-variant-numeric:tabular-nums;font-weight:700}
+.dnf{color:var(--red)}.plus2{color:#fbbf24}
+.field{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+.field label{font-size:12px;color:var(--muted)}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.event-list{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0}
+.move-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+.move-grid button{font-weight:750;font-size:16px;padding:14px 4px}
+.twisty-wrap{display:flex;justify-content:center;align-items:center;background:#0d1521;border-radius:12px;min-height:330px;overflow:hidden}
+twisty-player{width:100%;max-width:500px;height:330px}
+.alg-card{background:var(--panel);border:1px solid var(--border);padding:16px;border-radius:12px;margin-bottom:10px}
+.alg-notation{font-family:monospace;font-size:15px;line-height:1.8;margin:12px 0;overflow-wrap:anywhere}
+.alg-actions{display:flex;gap:7px;flex-wrap:wrap}
+.chart{height:190px;display:flex;align-items:end;gap:5px;padding-top:20px}
+.bar{flex:1;min-width:4px;background:var(--accent);border-radius:4px 4px 0 0}
+.notice{font-size:11px;color:var(--muted);margin-top:12px}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:25px}
+.modal{display:none;position:fixed;inset:0;background:#000b;z-index:10;align-items:center;justify-content:center;padding:20px}
+.modal.open{display:flex}
+.modal-card{background:var(--panel);border:1px solid var(--border);border-radius:15px;padding:23px;width:min(430px,100%)}
+@media(max-width:700px){
+ header{padding:0 4%}main{padding:20px 4%}
+ .stats-grid{grid-template-columns:repeat(2,1fr)}
+ .dashboard,.settings-grid{grid-template-columns:1fr}
+ .timer-area{min-height:240px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+ <div class="brand">
+  <svg class="logo" viewBox="0 0 48 48" fill="none">
+   <rect x="3" y="3" width="42" height="42" rx="12" stroke="#60a5fa" stroke-width="2"/>
+   <path d="M24 9L37 16.5V31.5L24 39L11 31.5V16.5L24 9Z" stroke="#60a5fa" stroke-width="2"/>
+   <path d="M24 15V24L32 29" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+   <circle cx="24" cy="24" r="2.5" fill="#60a5fa"/>
+  </svg>
+  <div>ChronoCubing<small>PRECISION. PROGRESS.</small></div>
+ </div>
+ <div class="controls">
+  <button onclick="toggleTheme()">◐</button>
+  <button onclick="showPage('settings')">⚙</button>
+ </div>
+</header>
+
+<nav>
+ <button class="active" data-page="timer">Timer</button>
+ <button data-page="solves">Solves</button>
+ <button data-page="stats">Statistics</button>
+ <button data-page="sessions">Sessions</button>
+ <button data-page="notation">Cube Lab</button>
+ <button data-page="algorithms">Algorithms</button>
+ <button data-page="settings">Settings</button>
+</nav>
+
+<main>
+
+<!-- TIMER -->
+<section class="page active" id="timer">
+ <div class="topline">
+  <div>
+   <div class="small muted">CURRENT EVENT</div>
+   <select id="eventSelect" style="width:150px;margin-top:7px">
+    <option>3x3</option><option>2x2</option><option>4x4</option>
+    <option>5x5</option><option>6x6</option><option>7x7</option>
+    <option>3x3 OH</option><option>3x3 BLD</option>
+    <option>3x3 FMC</option><option>Pyraminx</option>
+    <option>Skewb</option><option>Megaminx</option>
+    <option>Square-1</option><option>Clock</option>
+   </select>
+  </div>
+  <div class="controls">
+   <button onclick="createSession()">＋ New session</button>
+   <button onclick="toggleInspection()" id="inspectionBtn">Inspection: OFF</button>
+  </div>
+ </div>
+
+ <div class="scramble-box">
+  <div class="small muted" id="scrambleType">3X3 SCRAMBLE</div>
+  <div class="scramble" id="scramble">Loading...</div>
+  <div class="controls" style="justify-content:center">
+   <button onclick="newScramble()">↻ New scramble</button>
+   <button onclick="copyText(scrambleText)">Copy</button>
+  </div>
+ </div>
+
+ <div class="panel">
+  <div class="timer-area" id="timerArea">
+   <div class="timer" id="display">0.00</div>
+   <div class="timer-label" id="timerLabel">PRESS SPACE OR HOLD TO START</div>
+  </div>
+  <div class="notice" style="text-align:center">SPACE / HOLD: start · Release: stop · ESC: cancel</div>
+ </div>
+
+ <div class="stats-grid">
+  <div class="stat"><div class="label">SOLVES</div><div class="value" id="count">0</div></div>
+  <div class="stat"><div class="label">SESSION MEAN</div><div class="value" id="average">--</div></div>
+  <div class="stat"><div class="label">BEST SINGLE</div><div class="value" id="best">--</div></div>
+  <div class="stat"><div class="label">AO5</div><div class="value" id="ao5">--</div></div>
+ </div>
+
+ <div class="dashboard">
+  <div class="panel">
+   <div class="topline"><h3 class="section-title">Recent solves</h3><button onclick="showPage('solves')">View all →</button></div>
+   <div id="recent"></div>
+  </div>
+  <div class="panel">
+   <h3 class="section-title">Quick controls</h3>
+   <div class="controls">
+    <button onclick="manualSolve()">＋ Manual solve</button>
+    <button onclick="setPenalty('plus2')">+2</button>
+    <button onclick="setPenalty('dnf')">DNF</button>
+   </div>
+   <p class="notice">Apply penalties to the latest solve.</p>
+   <p class="small muted">ACTIVE SESSION</p>
+   <b id="sessionName">Session 1</b>
+  </div>
+ </div>
+</section>
+
+<!-- SOLVES -->
+<section class="page" id="solves">
+ <div class="topline">
+  <div><h2 class="title">Solve History</h2><p class="small muted">Every recorded solve</p></div>
+  <div class="controls">
+   <button onclick="exportJSON()">Export JSON</button>
+   <button onclick="exportCSV()">Export CSV</button>
+   <button onclick="clearSolves()">Clear</button>
+  </div>
+ </div>
+ <div class="panel table-wrap" style="margin-top:18px">
+  <table>
+   <thead><tr><th>#</th><th>TIME</th><th>SCRAMBLE</th><th>DATE</th><th>ACTIONS</th></tr></thead>
+   <tbody id="solveTable"></tbody>
+  </table>
+ </div>
+</section>
+
+<!-- STATS -->
+<section class="page" id="stats">
+ <h2 class="title">Statistics</h2>
+ <p class="small muted">Your performance overview</p>
+ <div class="stats-grid">
+  <div class="stat"><div class="label">SOLVES</div><div class="value" id="sCount">0</div></div>
+  <div class="stat"><div class="label">MEAN</div><div class="value" id="sMean">--</div></div>
+  <div class="stat"><div class="label">BEST</div><div class="value" id="sBest">--</div></div>
+  <div class="stat"><div class="label">WORST</div><div class="value" id="sWorst">--</div></div>
+  <div class="stat"><div class="label">AO5</div><div class="value" id="sAo5">--</div></div>
+  <div class="stat"><div class="label">AO12</div><div class="value" id="sAo12">--</div></div>
+  <div class="stat"><div class="label">AO50</div><div class="value" id="sAo50">--</div></div>
+  <div class="stat"><div class="label">AO100</div><div class="value" id="sAo100">--</div></div>
+ </div>
+ <div class="panel" style="margin-top:18px">
+  <h3 class="section-title">Solve progression</h3>
+  <div id="chart" class="chart"></div>
+ </div>
+</section>
+
+<!-- SESSIONS -->
+<section class="page" id="sessions">
+ <div class="topline"><h2 class="title">Sessions</h2><button onclick="createSession()">＋ Create session</button></div>
+ <div id="sessionList" style="display:grid;gap:12px;margin-top:18px"></div>
+</section>
+
+<!-- CUBE LAB -->
+<section class="page" id="notation">
+ <div class="topline">
+  <div><h2 class="title">Cube Lab</h2><p class="small muted">Interactive 3D notation laboratory</p></div>
+  <button onclick="resetCube()">Reset cube</button>
+ </div>
+
+ <div class="dashboard">
+  <div class="panel">
+   <h3 class="section-title">3D Cube Visualizer</h3>
+   <div class="twisty-wrap">
+    <twisty-player id="cubePlayer" puzzle="3x3x3" alg="" background="none" control-panel="bottom" hint-facelets="none"></twisty-player>
+   </div>
+   <p class="notice">Drag to rotate the cube. Use the player's controls to inspect the sequence.</p>
+  </div>
+
+  <div class="panel">
+   <h3 class="section-title">Your notation</h3>
+   <textarea id="cubeNotation" rows="4" placeholder="Click moves below or type notation..."></textarea>
+   <div class="controls" style="margin-top:9px">
+    <button onclick="undoMove()">↶ Undo</button>
+    <button onclick="resetCube()">Clear</button>
+    <button onclick="copyCube()">Copy</button>
+   </div>
+
+   <h3 class="section-title" style="margin-top:22px">Face turns</h3>
+   <div class="move-grid" id="faceMoves"></div>
+
+   <h3 class="section-title" style="margin-top:20px">Slice turns</h3>
+   <div class="move-grid" id="sliceMoves"></div>
+
+   <h3 class="section-title" style="margin-top:20px">Cube rotations</h3>
+   <div class="move-grid" id="rotationMoves"></div>
+
+   <h3 class="section-title" style="margin-top:20px">Wide turns</h3>
+   <div class="move-grid" id="wideMoves"></div>
+  </div>
+ </div>
+
+ <div class="panel" style="margin-top:15px">
+  <h3 class="section-title">Notation reference</h3>
+  <div class="stats-grid">
+   <div class="stat"><b>R</b><p class="small muted">Right clockwise</p></div>
+   <div class="stat"><b>R'</b><p class="small muted">Right counterclockwise</p></div>
+   <div class="stat"><b>R2</b><p class="small muted">Right 180°</p></div>
+   <div class="stat"><b>M</b><p class="small muted">Middle slice</p></div>
+  </div>
+  <p class="notice">Standard Singmaster notation. The 3D player interprets the complete sequence.</p>
+ </div>
+</section>
+
+<!-- ALGORITHMS -->
+<section class="page" id="algorithms">
+ <div class="topline">
+  <div><h2 class="title">Algorithm Library</h2><p class="small muted">Search, save and practice algorithms</p></div>
+  <button onclick="addCustomAlgorithm()">＋ Add algorithm</button>
+ </div>
+ <input id="algSearch" placeholder="Search algorithm name, category or notation..." style="margin-top:18px">
+ <div class="event-list" id="algCategories"></div>
+ <div id="algResults"></div>
+</section>
+
+<!-- SETTINGS -->
+<section class="page" id="settings">
+ <h2 class="title">Settings</h2>
+ <p class="small muted">Customize your ChronoCubing experience.</p>
+ <div class="settings-grid">
+  <div class="panel">
+   <h3 class="section-title">Timer preferences</h3>
+   <div class="field"><label>Precision</label><select id="precision"><option value="1">Tenths</option><option value="2">Hundredths</option><option value="3">Milliseconds</option></select></div>
+   <div class="field"><label>Inspection duration</label><select id="inspectionDuration"><option value="0">Disabled</option><option value="15">15 seconds</option><option value="10">10 seconds</option><option value="20">20 seconds</option></select></div>
+   <div class="field"><label>Start delay (ms)</label><input type="number" id="startDelay" min="100" max="2000" step="50"></div>
+   <div class="field"><label>Confirmation before deletion</label><select id="confirmDelete"><option value="true">On</option><option value="false">Off</option></select></div>
+  </div>
+  <div class="panel">
+   <h3 class="section-title">Appearance</h3>
+   <div class="field"><label>Theme</label><select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select></div>
+   <div class="field"><label>Accent color</label><input type="color" id="accent"></div>
+   <div class="field"><label>Timer size</label><select id="fontSize"><option value="normal">Normal</option><option value="large">Large</option><option value="small">Small</option></select></div>
+  </div>
+  <div class="panel">
+   <h3 class="section-title">Data management</h3>
+   <div class="field"><label>Import backup</label><input type="file" id="importFile" accept=".json"></div>
+   <button onclick="exportJSON()">Download backup</button>
+   <p class="notice">Data is saved locally in this browser.</p>
+  </div>
+  <div class="panel">
+   <h3 class="section-title">Keyboard shortcuts</h3>
+   <p class="small muted">SPACE — Start / stop</p>
+   <p class="small muted">ESC — Cancel</p>
+   <p class="small muted">N — New scramble</p>
+   <p class="small muted">P — Toggle +2</p>
+  </div>
+ </div>
+ <button style="margin-top:16px" onclick="saveSettings()">Save settings</button>
+</section>
+
+</main>
+
+<footer>CHRONOCUBING · PRECISION. PROGRESS. PERFORMANCE.</footer>
+
+<div class="modal" id="editModal">
+ <div class="modal-card">
+  <h3>Edit solve</h3>
+  <div class="field"><label>Time in seconds</label><input id="editTime" type="number" step=".001"></div>
+  <div class="field"><label>Penalty</label><select id="editPenalty"><option value="none">None</option><option value="plus2">+2</option><option value="dnf">DNF</option></select></div>
+  <div class="controls"><button onclick="saveEdit()">Save</button><button onclick="closeEdit()">Cancel</button></div>
+ </div>
+</div>
+
+<script>
+// ========================================
+// DATABASE
+// ========================================
+
+const DB="chronocubing_complete_v1";
+const $=id=>document.getElementById(id);
+
+let data;
+try {data=JSON.parse(localStorage.getItem(DB)||"null")}catch{}
+if(!data||!Array.isArray(data.sessions)||!data.sessions.length){
+ data={
+  sessions:[{id:1,name:"Session 1",event:"3x3",solves:[]}],
+  active:1,nextId:2,
+  settings:{precision:2,inspectionDuration:15,startDelay:350,accent:"#60a5fa",theme:"dark"}
+ };
+}
+if(!data.settings)data.settings={};
+if(!data.nextId)data.nextId=2;
+let state="idle",elapsed=0,startTime=0,raf=null,holdTimer=null;
+let prepared=false,holdPointer=null,inspectionTimer=null;
+let inspectionStart=0,inspectionRemaining=0;
+let scrambleText="",editingId=null;
+let cubeMoves=[];
+let selectedAlgCategory="All";
+
+function save(){localStorage.setItem(DB,JSON.stringify(data))}
+function session(){return data.sessions.find(s=>s.id===data.active)||data.sessions[0]}
+function solves(){return session().solves}
+function settings(){return data.settings}
+function format(ms){
+ if(!Number.isFinite(ms))return "DNF";
+ return (ms/1000).toFixed(Number(settings().precision??2));
+}
+function effective(s){
+ if(s.penalty==="dnf")return Infinity;
+ return s.ms+(s.penalty==="plus2"?2000:0);
+}
+function validTimes(list){return list.map(effective).filter(Number.isFinite)}
+function mean(list){
+ let a=validTimes(list);
+ return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+}
+function averageOf(n){
+ let list=solves().slice(-n);
+ if(list.length<n)return null;
+ let vals=list.map(effective).sort((a,b)=>a-b);
+ vals=vals.slice(1,-1);
+ if(vals.some(v=>!Number.isFinite(v)))return null;
+ return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+function showAvg(n){let a=averageOf(n);return a===null?"--":format(a)}
+function best(){let a=validTimes(solves());return a.length?Math.min(...a):null}
+
+// ========================================
+// NAVIGATION
+// ========================================
+
+function showPage(name){
+ document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===name));
+ document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===name));
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+
+// ========================================
+// SCRAMBLE GENERATOR
+// ========================================
+
+function randomMoves(faces,n){
+ return Array.from({length:n},()=>faces[Math.floor(Math.random()*faces.length)]).join(" ");
+}
+function generateScramble(event){
+ const faces=["R","L","U","D","F","B"],mods=["","'","2"];
+ let length=20;
+ if(event==="2x2")length=11;
+ if(event==="4x4")length=40;
+ if(event==="5x5")length=60;
+ if(event==="6x6")length=80;
+ if(event==="7x7")length=100;
+ if(event==="3x3 BLD")length=20;
+ if(event==="Pyraminx")return randomMoves(["R","L","U","B"],10)+" "+randomMoves(["r","l","u","b"],4);
+ if(event==="Skewb")return randomMoves(["R","L","U","B"],11);
+ if(event==="Megaminx")return randomMoves(["R++","R--","D++","D--","U","U'"],77);
+ if(event==="Square-1")return randomMoves(["(1,0)","(0,1)","(2,-1)","(-1,2)"],40);
+ if(event==="Clock")return randomMoves(["UR","DR","DL","UL","U","R","D","L","ALL","y2"],14);
+ let result=[],last="",lastAxis="";
+ for(let i=0;i<length;i++){
+  let face,axis;
+  do{
+   face=faces[Math.floor(Math.random()*6)];
+   axis="RL".includes(face)?"x":"UD".includes(face)?"y":"z";
+  }while(face===last||axis===lastAxis);
+  let wide=Number(event[0])>=4&&Math.random()<.4;
+  result.push(face+(wide?"w":"")+mods[Math.floor(Math.random()*3)]);
+  last=face;lastAxis=axis;
+ }
+ return result.join(" ");
+}
+function newScramble(){
+ scrambleText=generateScramble(session().event);
+ $("scramble").textContent=scrambleText;
+ $("scrambleType").textContent=session().event.toUpperCase()+" SCRAMBLE";
+}
+$("eventSelect").onchange=()=>{
+ session().event=$("eventSelect").value;
+ save();newScramble();refresh();
+};
+
+// ========================================
+// TIMER
+// ========================================
+
+function updateTimer(){
+ $("display").textContent=format(elapsed);
+}
+function animate(){
+ if(state!=="running")return;
+ elapsed=performance.now()-startTime;
+ updateTimer();
+ raf=requestAnimationFrame(animate);
+}
+function resetTimer(){
+ cancelAnimationFrame(raf);
+ clearTimeout(holdTimer);
+ clearInterval(inspectionTimer);
+ state="idle";prepared=false;elapsed=0;
+ $("display").className="timer";
+ $("timerLabel").textContent="PRESS SPACE OR HOLD TO START";
+ updateTimer();
+}
+function prepareStart(){
+ if(state!=="idle"&&state!=="inspection")return;
+ if(state==="inspection")clearInterval(inspectionTimer);
+ state="holding";prepared=false;
+ $("timerLabel").textContent="HOLD TO PREPARE...";
+ holdTimer=setTimeout(()=>{
+  if(state==="holding"){
+   prepared=true;
+   $("display").className="timer ready";
+   $("timerLabel").textContent="READY";
+  }
+ },Math.max(100,Number(settings().startDelay)||350));
+}
+function startTimer(){
+ clearTimeout(holdTimer);
+ if(!prepared)return;
+ state="running";
+ startTime=performance.now();
+ elapsed=0;
+ $("display").className="timer";
+ $("timerLabel").textContent="SOLVING...";
+ raf=requestAnimationFrame(animate);
+}
+function stopTimer(){
+ if(state!=="running")return;
+ elapsed=performance.now()-startTime;
+ cancelAnimationFrame(raf);
+ state="idle";
+ $("timerLabel").textContent="SOLVE COMPLETE";
+ $("display").className="timer";
+ saveSolve(elapsed);
+}
+function saveSolve(ms,penalty="none"){
+ solves().push({
+  id:Date.now()+Math.random(),
+  ms,penalty,
+  scramble:scrambleText,
+  event:session().event,
+  date:new Date().toISOString()
+ });
+ save();refresh();newScramble();
+}
+function cancelHold(){
+ if(state==="holding"){
+  clearTimeout(holdTimer);state="idle";prepared=false;
+  $("display").className="timer";
+  $("timerLabel").textContent="PRESS SPACE OR HOLD TO START";
+ }
+}
+
+function pointerDown(e){
+ if(e.button!==undefined&&e.button!==0)return;
+ if(state==="running")return;
+ if(state==="idle"||state==="inspection"){
+  holdPointer=e.pointerId;
+  prepareStart();
+ }
+}
+function pointerUp(e){
+ if(holdPointer!==null&&e.pointerId!==undefined&&e.pointerId!==holdPointer)return;
+ holdPointer=null;
+ if(state==="holding"){
+  if(prepared)startTimer();else cancelHold();
+ }
+}
+$("timerArea").addEventListener("pointerdown",pointerDown);
+window.addEventListener("pointerup",pointerUp);
+window.addEventListener("pointercancel",pointerUp);
+
+window.addEventListener("keydown",e=>{
+ if(e.target.matches("input,textarea,select"))return;
+ if(e.code==="Space"){
+  e.preventDefault();
+  if(state==="idle"||state==="inspection")prepareStart();
+ }
+ if(e.code==="Escape")resetTimer();
+ if(e.key.toLowerCase()==="n")newScramble();
+ if(e.key.toLowerCase()==="p"){
+  let s=solves().at(-1);
+  if(s){s.penalty=s.penalty==="plus2"?"none":"plus2";save();refresh()}
+ }
+});
+window.addEventListener("keyup",e=>{
+ if(e.code==="Space"){
+  if(state==="holding"){
+   if(prepared)startTimer();else cancelHold();
+  }else if(state==="running")stopTimer();
+ }
+});
+
+function toggleInspection(){
+ if(state==="inspection"){clearInterval(inspectionTimer);resetTimer();return}
+ let seconds=Number(settings().inspectionDuration)||0;
+ if(!seconds)return;
+ state="inspection";
+ inspectionStart=performance.now();
+ inspectionRemaining=seconds;
+ $("timerLabel").textContent="INSPECTION";
+ clearInterval(inspectionTimer);
+ inspectionTimer=setInterval(()=>{
+  let remaining=seconds-(performance.now()-inspectionStart)/1000;
+  if(remaining<=0){
+   clearInterval(inspectionTimer);
+   $("display").textContent="0";
+   $("timerLabel").textContent="INSPECTION FINISHED";
+  }else $("display").textContent=Math.ceil(remaining);
+ },50);
+}
+function manualSolve(){
+ let v=prompt("Enter time in seconds:");
+ if(v===null||!Number.isFinite(Number(v))||Number(v)<=0)return;
+ saveSolve(Number(v)*1000);
+}
+function setPenalty(p){
+ let s=solves().at(-1);if(!s)return;
+ s.penalty=p;save();refresh();
+}
+
+// ========================================
+// SOLVE HISTORY AND STATISTICS
+// ========================================
+
+function refresh(){
+ const list=solves(),m=mean(list),b=best();
+ $("count").textContent=list.length;
+ $("average").textContent=m===null?"--":format(m);
+ $("best").textContent=b===null?"--":format(b);
+ $("ao5").textContent=showAvg(5);
+ $("sessionName").textContent=session().name;
+ renderRecent();renderSolves();renderStats();renderSessions();
+}
+function renderRecent(){
+ $("recent").innerHTML=solves().slice(-5).reverse().map((s,i)=>`
+ <div class="topline" style="padding:10px 0;border-bottom:1px solid var(--border)">
+  <span class="small muted">#${solves().length-i}</span>
+  <b class="time ${s.penalty}">${s.penalty==="dnf"?"DNF":format(effective(s))}</b>
+ </div>`).join("")||'<p class="muted small">No solves yet.</p>';
+}
+function renderSolves(){
+ $("solveTable").innerHTML=solves().slice().reverse().map((s,i)=>`
+ <tr>
+  <td>${solves().length-i}</td>
+  <td class="time ${s.penalty}">${s.penalty==="dnf"?"DNF":format(effective(s))}</td>
+  <td class="muted" title="${s.scramble}">${(s.scramble||"").slice(0,35)}</td>
+  <td class="muted">${new Date(s.date).toLocaleDateString()}</td>
+  <td><button onclick="editSolve(${s.id})">Edit</button> <button onclick="deleteSolve(${s.id})">Delete</button></td>
+ </tr>`).join("")||'<tr><td colspan="5">No solves recorded.</td></tr>';
+}
+function renderStats(){
+ let list=solves(),vals=validTimes(list);
+ $("sCount").textContent=list.length;
+ $("sMean").textContent=mean(list)===null?"--":format(mean(list));
+ $("sBest").textContent=vals.length?format(Math.min(...vals)):"--";
+ $("sWorst").textContent=vals.length?format(Math.max(...vals)):"--";
+ [5,12,50,100].forEach(n=>$("sAo"+n).textContent=showAvg(n));
+ let recent=list.slice(-40),max=Math.max(1,...recent.map(s=>Number.isFinite(effective(s))?effective(s):0));
+ $("chart").innerHTML=recent.map(s=>`
+  <div class="bar" title="${s.penalty==="dnf"?"DNF":format(effective(s))}" style="height:${Math.max(3,Number.isFinite(effective(s))?effective(s)/max*100:3)}%"></div>`).join("");
+}
+function editSolve(id){
+ let s=solves().find(x=>x.id===id);if(!s)return;
+ editingId=id;
+ $("editTime").value=(s.ms/1000).toFixed(3);
+ $("editPenalty").value=s.penalty;
+ $("editModal").classList.add("open");
+}
+function closeEdit(){$("editModal").classList.remove("open")}
+function saveEdit(){
+ let s=solves().find(x=>x.id===editingId);
+ let v=Number($("editTime").value);
+ if(!s||!Number.isFinite(v)||v<=0)return;
+ s.ms=v*1000;s.penalty=$("editPenalty").value;
+ save();closeEdit();refresh();
+}
+function deleteSolve(id){
+ if(settings().confirmDelete!==false&&!confirm("Delete this solve?"))return;
+ session().solves=session().solves.filter(s=>s.id!==id);
+ save();refresh();
+}
+function clearSolves(){
+ if(!confirm("Delete all solves in this session?"))return;
+ session().solves=[];save();refresh();
+}
+$("editModal").onclick=e=>{if(e.target.id==="editModal")closeEdit()};
+
+// ========================================
+// SESSIONS
+// ========================================
+
+function createSession(){
+ let name=prompt("Session name:");if(!name)return;
+ let id=data.nextId++;
+ data.sessions.push({id,name,event:$("eventSelect").value,solves:[]});
+ data.active=id;save();refresh();
+}
+function renderSessions(){
+ $("sessionList").innerHTML=data.sessions.map(s=>`
+ <div class="panel">
+  <div class="topline">
+   <div><b>${s.name}</b><div class="small muted">${s.event} · ${s.solves.length} solves</div></div>
+   <div class="controls">
+    ${s.id===data.active?"<button class='active'>Active</button>":`<button onclick="switchSession(${s.id})">Open</button>`}
+    <button onclick="renameSession(${s.id})">Rename</button>
+    <button onclick="removeSession(${s.id})">Delete</button>
+   </div>
+  </div>
+ </div>`).join("");
+}
+function switchSession(id){
+ data.active=id;
+ $("eventSelect").value=session().event;
+ save();newScramble();refresh();
+}
+function renameSession(id){
+ let s=data.sessions.find(x=>x.id===id);
+ let name=prompt("Session name:",s.name);
+ if(name){s.name=name;save();refresh()}
+}
+function removeSession(id){
+ if(data.sessions.length===1)return alert("Keep at least one session.");
+ if(!confirm("Delete this session?"))return;
+ data.sessions=data.sessions.filter(s=>s.id!==id);
+ if(data.active===id)data.active=data.sessions[0].id;
+ save();refresh();
+}
+
+// ========================================
+// CUBE NOTATION LAB
+// ========================================
+
+const moveGroups={
+ faceMoves:["R","R'","R2","L","L'","L2","U","U'","U2","D","D'","D2","F","F'","F2","B","B'","B2"],
+ sliceMoves:["M","M'","M2","E","E'","E2","S","S'","S2"],
+ rotationMoves:["x","x'","x2","y","y'","y2","z","z'","z2"],
+ wideMoves:["r","r'","r2","l","l'","l2","u","u'","u2","d","d'","d2","f","f'","f2","b","b'","b2"]
+};
+function setupMoveButtons(){
+ Object.entries(moveGroups).forEach(([id,moves])=>{
+  $(id).innerHTML=moves.map(m=>`<button onclick="addCubeMove('${m}')">${m}</button>`).join("");
+ });
+}
+function updateCube(){
+ $("cubeNotation").value=cubeMoves.join(" ");
+ let player=$("cubePlayer");
+ if(player)player.alg=cubeMoves.join(" ");
+}
+function addCubeMove(m){cubeMoves.push(m);updateCube()}
+function undoMove(){cubeMoves.pop();updateCube()}
+function resetCube(){cubeMoves=[];updateCube()}
+function copyCube(){copyText(cubeMoves.join(" "))}
+$("cubeNotation").addEventListener("input",e=>{
+ cubeMoves=e.target.value.trim()?e.target.value.trim().split(/\s+/):[];
+ updateCube();
+});
+
+// ========================================
+// ALGORITHM LIBRARY
+// ========================================
+
+let algorithmDatabase=[
+ {name:"Sexy Move",category:"Beginner",notation:"R U R' U'",description:"Fundamental four-move trigger."},
+ {name:"Inverse Sexy Move",category:"Beginner",notation:"U R U' R'",description:"Reverse trigger."},
+ {name:"Sledgehammer",category:"Beginner",notation:"R' F R F'",description:"Common trigger used in F2L."},
+ {name:"Hedgehammer",category:"Beginner",notation:"F R' F' R",description:"Reverse sledgehammer."},
+ {name:"Sune",category:"OLL",notation:"R U R' U R U2 R'",description:"A common last-layer orientation case."},
+ {name:"Anti-Sune",category:"OLL",notation:"R U2 R' U' R U' R'",description:"Sune variation."},
+ {name:"T OLL",category:"OLL",notation:"r U R' U' r' F R F'",description:"T-shaped OLL case."},
+ {name:"OLL Cross",category:"OLL",notation:"F R U R' U' F'",description:"Basic cross formation."},
+ {name:"T Perm",category:"PLL",notation:"R U R' U' R' F R2 U' R' U' R U R' F'",description:"Two corner and two edge swaps."},
+ {name:"Ua Perm",category:"PLL",notation:"R U' R U R U R U' R' U' R2",description:"Three-edge cycle."},
+ {name:"Ub Perm",category:"PLL",notation:"R2 U R U R' U' R' U' R' U R'",description:"Opposite three-edge cycle."},
+ {name:"H Perm",category:"PLL",notation:"M2 U M2 U2 M2 U M2",description:"Opposite edge swaps."},
+ {name:"Z Perm",category:"PLL",notation:"M' U M2 U M2 U M' U2 M2",description:"Adjacent edge swaps."},
+ {name:"Jb Perm",category:"PLL",notation:"R U R' F' R U R' U' R' F R2 U' R'",description:"Corner and edge permutation."},
+ {name:"Y Perm",category:"PLL",notation:"F R U' R' U' R U R' F' R U R' U' R' F R F'",description:"Corner and edge permutation."},
+ {name:"Aa Perm",category:"PLL",notation:"x R' U R' D2 R U' R' D2 R2 x'",description:"Corner three-cycle."},
+ {name:"Ab Perm",category:"PLL",notation:"x R2 D2 R U R' D2 R U' R x'",description:"Opposite corner three-cycle."},
+ {name:"Basic F2L Insert",category:"F2L",notation:"U R U' R'",description:"Basic right-side pair insertion."},
+ {name:"F2L Left Insert",category:"F2L",notation:"U' L' U L",description:"Left-side insertion trigger."},
+ {name:"F2L Pair Insert",category:"F2L",notation:"U' R U R' U R U' R'",description:"Pair insertion sequence."},
+ {name:"COLL Sune",category:"COLL",notation:"R U R' U R U2 R'",description:"COLL example."},
+ {name:"Winter Variation",category:"WV",notation:"R U2 R' U' R U' R'",description:"Winter Variation example."},
+ {name:"ZBLL Sune Example",category:"ZBLL",notation:"R U R' U R U2 R'",description:"Sune-family example."},
+ {name:"Pyraminx Tip",category:"Pyraminx",notation:"R U R'",description:"Example Pyraminx notation is puzzle-specific."}
+];
+
+function renderAlgCategories(){
+ let categories=["All","Beginner","Cross","F2L","OLL","PLL","COLL","WV","VLS","ZBLL","Custom","Pyraminx"];
+ $("algCategories").innerHTML=categories.map(c=>`
+ <button class="${selectedAlgCategory===c?"active":""}" onclick="selectAlgCategory('${c}')">${c}</button>`).join("");
+}
+function selectAlgCategory(c){selectedAlgCategory=c;renderAlgCategories();renderAlgorithms()}
+function renderAlgorithms(){
+ let search=$("algSearch").value.toLowerCase();
+ let results=algorithmDatabase.filter(a=>
+  (selectedAlgCategory==="All"||a.category===selectedAlgCategory)&&
+  (a.name.toLowerCase().includes(search)||a.notation.toLowerCase().includes(search)||a.description.toLowerCase().includes(search))
+ );
+ $("algResults").innerHTML=results.length?results.map(a=>`
+ <div class="alg-card">
+  <div class="topline"><b>${escapeHTML(a.name)}</b><span class="small muted">${escapeHTML(a.category)}</span></div>
+  <div class="alg-notation">${escapeHTML(a.notation)}</div>
+  <p class="small muted">${escapeHTML(a.description)}</p>
+  <div class="alg-actions">
+   <button onclick="loadAlgorithm(${algorithmDatabase.indexOf(a)})">Open in Cube Lab</button>
+   <button onclick="copyText('${a.notation.replace(/\\/g,"\\\\").replace(/'/g,"\\'")}')">Copy</button>
+   ${a.custom?`<button onclick="deleteAlgorithm(${algorithmDatabase.indexOf(a)})">Delete</button>`:""}
+  </div>
+ </div>`).join(""):'<p class="muted">No algorithms found.</p>';
+}
+function escapeHTML(s){
+ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function loadAlgorithm(i){
+ let a=algorithmDatabase[i];if(!a)return;
+ cubeMoves=a.notation.trim().split(/\s+/);
+ updateCube();showPage("notation");
+}
+function addCustomAlgorithm(){
+ let name=prompt("Algorithm name:");if(!name)return;
+ let notation=prompt("Enter algorithm notation:");if(!notation)return;
+ let category=prompt("Category (OLL, PLL, F2L, COLL, ZBLL, Custom):","Custom")||"Custom";
+ algorithmDatabase.push({name,notation,category,description:"Custom algorithm",custom:true});
+ saveCustomAlgorithms();renderAlgCategories();renderAlgorithms();
+}
+function saveCustomAlgorithms(){
+ localStorage.setItem("chrono_custom_algorithms",JSON.stringify(algorithmDatabase.filter(a=>a.custom)));
+}
+function deleteAlgorithm(i){
+ if(!confirm("Delete this custom algorithm?"))return;
+ algorithmDatabase.splice(i,1);saveCustomAlgorithms();renderAlgorithms();
+}
+$("algSearch").addEventListener("input",renderAlgorithms);
+
+// ========================================
+// SETTINGS
+// ========================================
+
+function applySettings(){
+ let s=settings(),light=s.theme==="light";
+ const vars={
+  "--bg":light?"#f3f6fa":"#090d14",
+  "--panel":light?"#ffffff":"#111824",
+  "--panel2":light?"#e8edf5":"#182333",
+  "--border":light?"#d6deea":"#29364a",
+  "--text":light?"#172033":"#edf3fc",
+  "--muted":light?"#63738a":"#8493a9",
+  "--accent":s.accent||"#60a5fa"
+ };
+ Object.entries(vars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+ $("display").style.fontSize=s.fontSize==="large"?"clamp(95px,18vw,175px)":s.fontSize==="small"?"clamp(55px,10vw,105px)":"";
+ $("precision").value=s.precision??2;
+ $("inspectionDuration").value=s.inspectionDuration??15;
+ $("startDelay").value=s.startDelay??350;
+ $("accent").value=s.accent||"#60a5fa";
+ $("themeSelect").value=s.theme||"dark";
+ $("fontSize").value=s.fontSize||"normal";
+ $("confirmDelete").value=String(s.confirmDelete!==false);
+}
+function saveSettings(){
+ let s=settings();
+ s.precision=Number($("precision").value);
+ s.inspectionDuration=Number($("inspectionDuration").value);
+ s.startDelay=Math.max(100,Math.min(2000,Number($("startDelay").value)||350));
+ s.accent=$("accent").value;
+ s.theme=$("themeSelect").value;
+ s.fontSize=$("fontSize").value;
+ s.confirmDelete=$("confirmDelete").value==="true";
+ save();applySettings();refresh();alert("Settings saved!");
+}
+function toggleTheme(){
+ settings().theme=settings().theme==="light"?"dark":"light";
+ save();applySettings();
+}
+
+// ========================================
+// IMPORT / EXPORT
+// ========================================
+
+function download(content,name,type){
+ let a=document.createElement("a");
+ let url=URL.createObjectURL(new Blob([content],{type}));
+ a.href=url;a.download=name;a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportJSON(){download(JSON.stringify(data,null,2),"chronocubing-backup.json","application/json")}
+function exportCSV(){
+ let rows=[["Event","Time","Penalty","Scramble","Date"]];
+ solves().forEach(s=>rows.push([s.event,(s.ms/1000).toFixed(3),s.penalty,s.scramble,s.date]));
+ download(rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(",")).join("\n"),"chronocubing-solves.csv","text/csv");
+}
+$("importFile").onchange=async e=>{
+ try{
+  let imported=JSON.parse(await e.target.files[0].text());
+  if(!Array.isArray(imported.sessions)||!imported.sessions.length||!imported.sessions.every(s=>Array.isArray(s.solves)))throw Error();
+  if(!confirm("Replace current data?"))return;
+  data=imported;save();location.reload();
+ }catch{alert("Invalid backup file.")}
+};
+function copyText(text){
+ if(navigator.clipboard?.writeText)navigator.clipboard.writeText(text).catch(()=>prompt("Copy this text:",text));
+ else prompt("Copy this text:",text);
+}
+
+// ========================================
+// INITIALIZATION
+// ========================================
+
+try{
+ let custom=JSON.parse(localStorage.getItem("chrono_custom_algorithms")||"[]");
+ if(Array.isArray(custom))algorithmDatabase.push(...custom);
+}catch{}
+
+setupMoveButtons();
+renderAlgCategories();
+renderAlgorithms();
+applySettings();
+$("eventSelect").value=session().event;
+newScramble();
+refresh();
+
+customElements.whenDefined("twisty-player").then(updateCube);
+</script>
+</body>
+</html>
